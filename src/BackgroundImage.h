@@ -34,6 +34,11 @@ public:
         startThread();
     }
     
+    
+    void setMap( ofImage & map ){
+        slitscan.setDelayMap(map);
+    }
+    
     void update(){
         if ( bNew ){
             lock();

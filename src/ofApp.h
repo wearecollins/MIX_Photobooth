@@ -5,7 +5,7 @@
 #include "ofxUI.h"
 #include "ofxSlitScan.h"
 #include "BackgroundImage.h"
-
+#include "SlitscanPointCloud.h"
 
 class ofApp : public ofBaseApp{
 
@@ -26,13 +26,11 @@ class ofApp : public ofBaseApp{
 		
         ofxKinect       kinect;
         ofxUICanvas *   gui;
-        ofMesh          pointCloud;
         ofShader        render;
         vector<string> sampleMapStrings;
         vector<ofImage*> sampleMaps;
     
-        ofxSlitScan     warp;
-        ofxSlitScan     colorWarp;
-        BackgroundImage background;
+        SlitscanPointCloud  warp;
+        BackgroundImage     background;
         int capacity;
 };
