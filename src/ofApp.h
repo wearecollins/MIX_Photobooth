@@ -7,6 +7,9 @@
 #include "BackgroundImage.h"
 #include "SlitscanPointCloud.h"
 
+#include "ofxGifEncoder.h"
+#include "ofxRCUtils.h"
+
 class ofApp : public ofBaseApp{
 
 	public:
@@ -26,11 +29,21 @@ class ofApp : public ofBaseApp{
 		
         ofxKinect       kinect;
         ofxUICanvas *   gui;
-        ofShader        render;
+//        ofShader        render;
         vector<string> sampleMapStrings;
         vector<ofImage*> sampleMaps;
     
         SlitscanPointCloud  warp;
         BackgroundImage     background;
         int capacity;
+    
+        // recording
+        ofxGifEncoder       gifMaker;
+        ofFbo screenFbo;
+    
+        vector<rc::Timer>   timers;
+//        vector<rc::Timer>   frameTimer;
+    
+        // where are we in the countdown
+        int whichImage;
 };

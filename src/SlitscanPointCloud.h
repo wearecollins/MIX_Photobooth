@@ -8,8 +8,26 @@
 
 #pragma mark once
 
+#include "ofMain.h"
+#include "ofxRCUtils.h"
+
+struct Sorter {
+    Sorter(vector<ofVec3f> & v) :
+    verts(v){
+    };
+    vector<ofVec3f> & verts;
+    bool operator() (ofIndexType i, ofIndexType j) {
+        return (verts[i].z < verts[j].z);
+    }
+};
+
 class SlitscanPointCloud : public ofThread {
 public:
+    
+    SlitscanPointCloud() :
+    captureThresh( 640 * 480 * .25 ),
+    isFull(false){
+    }
     
     ~SlitscanPointCloud(){
         waitForThread();
@@ -19,35 +37,32 @@ public:
         colorImage.setUseTexture(false);
         depthImage.setUseTexture(false);
         
-        slitscanColor.setup(640, 480, capacity, OF_IMAGE_COLOR);
+        width   = 640;
+        height  = 480;
+        
+        slitscanColor.setup(width, height, capacity, OF_IMAGE_COLOR);
         slitscanColor.setBlending(true);
         slitscanColor.setDelayMap(map);
         slitscanColor.getOutputImage().setUseTexture(false);
         
-        slitscanDepth.setup(640, 480, capacity, OF_IMAGE_GRAYSCALE);
+        slitscanDepth.setup(width, height, capacity, OF_IMAGE_GRAYSCALE);
         slitscanDepth.setBlending(true);
         slitscanDepth.setDelayMap(map);
         slitscanDepth.getOutputImage().setUseTexture(false);
-        
-        width   = 640;
-        height  = 480;
         
         pointCloud.setMode(OF_PRIMITIVE_POINTS);
         for (int x=0; x<width; x++){
             for (int y=0; y<height; y++){
                 verts.push_back( ofVec3f(x,y,0) );
                 colors.push_back(ofFloatColor(1.0,1.0,1.0,1.0));
+                indices.push_back(y + x*height);
             }
         }
+        sorter = new Sorter(verts);
         
         camera.setPosition(ofGetWidth()/2.0, ofGetHeight()/2.0, 500);
         camera.roll(180);
         fbo.allocate(ofGetWidth(), ofGetHeight());
-    }
-    
-    void setMap( ofImage & map ){
-        slitscanColor.setDelayMap(map);
-        slitscanDepth.setDelayMap(map);
     }
     
     void update( ofPixelsRef & color, ofPixelsRef & depth ){
@@ -58,6 +73,7 @@ public:
             pointCloud.clear();
             pointCloud.addVertices(verts);
             pointCloud.addColors(colors);
+            pointCloud.addIndices(indices);
             bNew = false;
         }
         unlock();
@@ -69,31 +85,24 @@ public:
         if ( fbo.getWidth() != ofGetWidth() ){
             //fbo.allocate(ofGetWidth(), ofGetHeight());
         }
-        render();
     }
     
-    void render(){
+    void draw( bool bFill = true ){
         ofEnableAlphaBlending();
-//        fbo.begin();
-//        ofClear(255,0.0);
         ofPushMatrix();
+        glPushAttrib(GL_DEPTH_BUFFER_BIT);
         glEnable(GL_POINT_SMOOTH);
-        glPointSize(4.0);
-//        ofEnableDepthTest();
+        glPointSize( bFill ? 4.0 : 2.0 );
+//        glEnable(GL_DEPTH_TEST);
+//        glDepthMask(GL_TRUE);
         ofTranslate(ofGetWidth()/2.0, ofGetHeight()/2.0);
-        float scale = fmin((float) (ofGetWidth())/width, (float) (ofGetHeight()) / height );
+        float scale = bFill ? fmin((float) (ofGetWidth())/width, (float) (ofGetHeight()) / height ) : 1.0;
         ofRotate(sin(ofGetElapsedTimeMillis() * .0005) * 30.0, 0, 1.0, 0);
         ofScale(scale, scale, scale);
         ofTranslate(-width/2.0, -height/2.0);
         pointCloud.draw();
         ofPopMatrix();
-        ofDisableDepthTest();
-//        fbo.end();
-    }
-    
-    void draw(){
-//        fbo.draw(0,0);
-        render();
+        glPopAttrib();
     }
     
     void threadedFunction(){
@@ -106,6 +115,8 @@ public:
             ofImage & img = slitscanDepth.getOutputImage();
             ofImage & imgColor = slitscanColor.getOutputImage();
             
+            int count = 0;
+            
             for (int x=0; x<width; x++){
                 for (int y=0; y<height; y++){
                     int ind = y + x*height;
@@ -116,15 +127,46 @@ public:
                         ofColor color = imgColor.getPixelsRef().getColor(x, y);
                         color.a = 255;
                         colors[ind] = color;//ofFloatColor(color.r/255.0,color.g/255.0,color.b/255.0,color.a/255.0);//kinect.getColorAt(x, y));
+                        indices[ind] = ind;
+                        count++;
+                        
                     } else {
                         colors[ind] = ofFloatColor(0,0);
                     }
                 }
             }
-        
+            
+            // sort indices by depth
+            std::sort( indices.begin(), indices.end(), *sorter );
+            
+            if ( (!restartTimer.hasStarted() || restartTimer.isReady() ) && !isFull && count > captureThresh ){
+                cout << "CAPTURE" << endl;
+                isFull = true;
+                timer.start(1000);
+            }
+            
             bNew = true;
             sleep(16);
         }
+    }
+    
+    // public props
+    int captureThresh;
+    
+    // methods
+    bool shouldCapture(){
+        if ( isFull && timer.isReady() ){
+            isFull = false;
+            restartTimer.start( 30000 );
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    void setMap( ofImage & map ){
+        slitscanColor.setDelayMap(map);
+        slitscanDepth.setDelayMap(map);
     }
     
     void disableCamera(){
@@ -138,12 +180,20 @@ public:
 protected:
     ofEasyCam camera;
     
+    // sketch
+    Sorter * sorter;
+    
+    bool isFull;
+    rc::Timer timer, restartTimer;
+    
     ofxSlitScan slitscanColor, slitscanDepth;
     ofImage colorImage, depthImage;
     ofVideoPlayer video;
     bool bNew;
     ofMesh  pointCloud;
     int width, height;
+    
+    vector<ofIndexType> indices;
     vector<ofVec3f> verts;
     vector<ofFloatColor> colors;
     ofFbo fbo;
