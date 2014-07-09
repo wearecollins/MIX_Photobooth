@@ -5,3 +5,4 @@ DerivedData
 *.xcuserdatad
 auth.js
 *.mov
+*/node_modules
