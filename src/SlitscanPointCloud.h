@@ -25,7 +25,7 @@ class SlitscanPointCloud : public ofThread {
 public:
     
     SlitscanPointCloud() :
-    captureThresh( 640 * 480 * .25 ),
+    captureThresh( 640 * 480 * .02 ),
     isFull(false){
     }
     
@@ -33,7 +33,8 @@ public:
         waitForThread();
     }
     
-    void setup( int capacity, ofImage & map ){
+    void setup( int cap, ofImage & map ){
+        lastCapacity = capacity = cap;
         colorImage.setUseTexture(false);
         depthImage.setUseTexture(false);
         
@@ -49,6 +50,8 @@ public:
         slitscanDepth.setBlending(true);
         slitscanDepth.setDelayMap(map);
         slitscanDepth.getOutputImage().setUseTexture(false);
+        quicklight.move(0,0,500);
+
         
         pointCloud.setMode(OF_PRIMITIVE_POINTS);
         for (int x=0; x<width; x++){
@@ -88,12 +91,17 @@ public:
     }
     
     void draw( bool bFill = true ){
+        ofEnableLighting();
+        quicklight.enable();
+        //quicklight.setPosition(ofGetWidth()/2.0, ofGetHeight()/2.0, 500);
+        quicklight.roll(sin(ofGetElapsedTimeMillis() * .001));
         ofEnableAlphaBlending();
         ofPushMatrix();
         glPushAttrib(GL_DEPTH_BUFFER_BIT);
         glEnable(GL_POINT_SMOOTH);
-        glPointSize( bFill ? 4.0 : 2.0 );
-//        glEnable(GL_DEPTH_TEST);
+        glPointSize( bFill ? 3.0 : 1.0 );
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_POINT_SPRITE);
 //        glDepthMask(GL_TRUE);
         ofTranslate(ofGetWidth()/2.0, ofGetHeight()/2.0);
         float scale = bFill ? fmin((float) (ofGetWidth())/width, (float) (ofGetHeight()) / height ) : 1.0;
@@ -103,6 +111,7 @@ public:
         pointCloud.draw();
         ofPopMatrix();
         glPopAttrib();
+        ofDisableLighting();
     }
     
     void threadedFunction(){
@@ -111,11 +120,17 @@ public:
             slitscanDepth.addImage(depthImage);
 //            imageBuffer.setFromPixels(slitscan.getOutputImage().getPixelsRef());
             
-            
             ofImage & img = slitscanDepth.getOutputImage();
             ofImage & imgColor = slitscanColor.getOutputImage();
             
             int count = 0;
+            for (int x=0; x<width; x++){
+                for (int y=0; y<height; y++){
+                    if ( depthImage.getPixelsRef().getColor(x, y).r > 10 ){
+                        count++;
+                    }
+                }
+            }
             
             for (int x=0; x<width; x++){
                 for (int y=0; y<height; y++){
@@ -128,8 +143,6 @@ public:
                         color.a = 255;
                         colors[ind] = color;//ofFloatColor(color.r/255.0,color.g/255.0,color.b/255.0,color.a/255.0);//kinect.getColorAt(x, y));
                         indices[ind] = ind;
-                        count++;
-                        
                     } else {
                         colors[ind] = ofFloatColor(0,0);
                     }
@@ -137,21 +150,42 @@ public:
             }
             
             // sort indices by depth
-            std::sort( indices.begin(), indices.end(), *sorter );
+            //std::sort( indices.begin(), indices.end(), *sorter );
             
             if ( (!restartTimer.hasStarted() || restartTimer.isReady() ) && !isFull && count > captureThresh ){
-                cout << "CAPTURE" << endl;
+//                cout << "CAPTURE" << endl;
                 isFull = true;
-                timer.start(1000);
+                timer.start(500);
+            } else if ( count < captureThresh && !emptyTimer.hasStarted() ){
+//                cout << "Not full anymore?"<<endl;
+                timer.stop();
+                isFull = false;
+                emptyTimer.start(500);
+            } else if ( emptyTimer.hasStarted() && count > captureThresh ){
+//                cout << "Full again?"<<endl;
+                emptyTimer.stop();
+            }
+            
+            if ( lastCapacity != capacity ){
+                lastCapacity = capacity;
+                slitscanColor.setCapacity(capacity);
+                slitscanDepth.setCapacity(capacity);
+                slitscanColor.setTimeDelayAndWidth(0, capacity);
+                slitscanDepth.setTimeDelayAndWidth(0, capacity);
             }
             
             bNew = true;
             sleep(16);
+            yield();
         }
     }
     
     // public props
     int captureThresh;
+    
+    bool getIsFull(){
+        return !emptyTimer.isReady();
+    }
     
     // methods
     bool shouldCapture(){
@@ -162,6 +196,10 @@ public:
         } else {
             return false;
         }
+    }
+    
+    void setCapacity( int cap ){
+        capacity = cap;
     }
     
     void setMap( ofImage & map ){
@@ -178,13 +216,16 @@ public:
     }
     
 protected:
+    
+    ofLight quicklight;
     ofEasyCam camera;
+    int capacity, lastCapacity;
     
     // sketch
     Sorter * sorter;
     
     bool isFull;
-    rc::Timer timer, restartTimer;
+    rc::Timer timer, emptyTimer, restartTimer;
     
     ofxSlitScan slitscanColor, slitscanDepth;
     ofImage colorImage, depthImage;

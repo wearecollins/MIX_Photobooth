@@ -6,10 +6,25 @@
 <Widget>
     <Kind>4</Kind>
     <Name>far</Name>
-    <Value>2373.015869141</Value>
+    <Value>1523.809570312</Value>
+</Widget>
+<Widget>
+    <Kind>42</Kind>
+    <Name>capacity</Name>
+    <Value>72</Value>
 </Widget>
 <Widget>
     <Kind>42</Kind>
     <Name>whichMap</Name>
-    <Value>5</Value>
+    <Value>2</Value>
+</Widget>
+<Widget>
+    <Kind>42</Kind>
+    <Name>whichMapBG</Name>
+    <Value>1</Value>
+</Widget>
+<Widget>
+    <Kind>2</Kind>
+    <Name>reconnect Kinect</Name>
+    <Value>0</Value>
 </Widget>

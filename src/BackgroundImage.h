@@ -18,10 +18,12 @@ public:
         waitForThread();
     }
     
-    void load( string path, int capacity, ofImage & map ){
+    void load( string path, int cap, ofImage & map ){
+        capacity = cap;
         video.loadMovie(path);
         video.setUseTexture(false);
         video.play();
+        video.setVolume(0);
         
         videoImage.setUseTexture(false);
         imageBuffer.setUseTexture(false);
@@ -34,6 +36,9 @@ public:
         startThread();
     }
     
+    void setCapacity( int cap ){
+        capacity = cap;
+    }
     
     void setMap( ofImage & map ){
         slitscan.setDelayMap(map);
@@ -56,7 +61,11 @@ public:
             slitscan.addImage(videoImage);
             imageBuffer.setFromPixels(slitscan.getOutputImage().getPixelsRef());
             bNew = true;
+            
+            slitscan.setCapacity(capacity);
+            slitscan.setTimeDelayAndWidth(0, capacity);
             sleep(16);
+            yield();
         }
     }
     
@@ -65,6 +74,7 @@ public:
     }
     
 protected:
+    int capacity;
     
     ofxSlitScan slitscan;
     ofImage videoImage, image, imageBuffer;

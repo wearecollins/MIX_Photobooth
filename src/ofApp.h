@@ -40,10 +40,20 @@ class ofApp : public ofBaseApp{
         // recording
         ofxGifEncoder       gifMaker;
         ofFbo screenFbo;
+        void saveComplete( string & filepath );
     
         vector<rc::Timer>   timers;
-//        vector<rc::Timer>   frameTimer;
+        rc::Timer           frameTimer, reconnectTimer, showTimer, enderTimer;
     
         // where are we in the countdown
         int whichImage;
+    
+        // images
+        ofImage           overlay;
+        ofImage           endcard;
+        map<int, ofImage> countdown;
+        map<int, ofImage> hours;
+        map<int, ofImage> min_left;
+        map<int, ofImage> min_right;
+        void drawOverlay( float scale = 1.0 );
 };
