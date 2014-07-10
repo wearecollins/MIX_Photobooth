@@ -43,14 +43,14 @@ class ofApp : public ofBaseApp{
         void saveComplete( string & filepath );
     
         vector<rc::Timer>   timers;
-        rc::Timer           frameTimer, reconnectTimer, showTimer, enderTimer;
+        rc::Timer           frameTimer, reconnectTimer, showTimer, enderTimer, changeFilterTimer;
     
         // where are we in the countdown
         int whichImage;
     
         // images
         ofImage           overlay;
-        ofImage           endcard;
+        ofImage           endcard, getReady;
         map<int, ofImage> countdown;
         map<int, ofImage> hours;
         map<int, ofImage> min_left;

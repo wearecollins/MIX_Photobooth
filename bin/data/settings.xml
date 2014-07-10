@@ -6,7 +6,7 @@
 <Widget>
     <Kind>4</Kind>
     <Name>far</Name>
-    <Value>1523.809570312</Value>
+    <Value>1206.349243164</Value>
 </Widget>
 <Widget>
     <Kind>42</Kind>
@@ -21,10 +21,15 @@
 <Widget>
     <Kind>42</Kind>
     <Name>whichMapBG</Name>
-    <Value>1</Value>
+    <Value>3</Value>
 </Widget>
 <Widget>
     <Kind>2</Kind>
     <Name>reconnect Kinect</Name>
+    <Value>0</Value>
+</Widget>
+<Widget>
+    <Kind>2</Kind>
+    <Name>draw overlay</Name>
     <Value>0</Value>
 </Widget>

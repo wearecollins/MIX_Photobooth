@@ -40,7 +40,7 @@ void ofApp::setup(){
 	sampleMapStrings.push_back("maps/right_to_left.png");
 	sampleMapStrings.push_back("maps/up_to_down.png");
 	sampleMapStrings.push_back("maps/down_to_up.png");
-	sampleMapStrings.push_back("maps/hard_noise.png");
+//	sampleMapStrings.push_back("maps/hard_noise.png");
 	sampleMapStrings.push_back("maps/soft_noise.png");
 	sampleMapStrings.push_back("maps/random_grid.png");
 	sampleMapStrings.push_back("maps/video_delay.png");
@@ -55,6 +55,7 @@ void ofApp::setup(){
     // images
     overlay.loadImage( gifScale == 1.0 ? "overlay.png" : "overlay_small.png");
     endcard.loadImage("endcard.png");
+    getReady.loadImage("get_ready.png");
     
     ofDirectory dir;
     dir.allowExt("png");
@@ -119,6 +120,8 @@ void ofApp::setup(){
     screenFbo.allocate(width * gifScale, height * gifScale, GL_RGB);
     gifMaker.setup(width * gifScale, height * gifScale);
     ofAddListener(gifMaker.OFX_GIF_SAVE_FINISHED, this, &ofApp::saveComplete);
+    
+    changeFilterTimer.start(15000);
 }
 
 //--------------------------------------------------------------
@@ -131,6 +134,11 @@ void ofApp::update(){
     if ( lastMapBG != whichMapBG ){
         lastMapBG = whichMapBG;
         background.setMap(*(sampleMaps[whichMapBG]));
+    }
+    
+    if ( changeFilterTimer.isReady() && !bCapturing && !bRecording){
+        whichMap = floor( ofRandom(5));
+        cout << "changed map" << endl;
     }
     
     if ( lastCapacity != capacity ){
@@ -165,6 +173,7 @@ void ofApp::update(){
             
             if ( !warp.getIsFull() ){
                 cout <<"No longer full?"<<endl;
+                warp.stopReset();
                 for (int i=0; i<timers.size(); i++){
                     timers[i].stop();
                     bCapturing = false;
@@ -256,8 +265,8 @@ void ofApp::draw(){
             ofPushMatrix();
                 ofScale(gifScale, gifScale);
                 background.getImage().draw(0,0);
-                warp.draw( false );
             ofPopMatrix();
+            warp.draw( false, width * gifScale, height * gifScale );
             drawOverlay();
             screenFbo.end();
             
@@ -279,6 +288,10 @@ void ofApp::draw(){
         if ( enderTimer.isReady() ) enderTimer.stop();
         ofSetColor(255, fabs( sin(ofGetElapsedTimeMillis() * .01)) * 255.0 );
         endcard.draw(rc::ofCenter() - ofPoint(endcard.width/2.0, endcard.height/2.0));
+        ofSetColor(255);
+    } else if ( warp.getReady() ){
+        ofSetColor(255, fabs( sin(ofGetElapsedTimeMillis() * .01)) * 255.0 );
+        getReady.draw(rc::ofCenter() - ofPoint(getReady.width/2.0, getReady.height/2.0));
         ofSetColor(255);
     }
     
