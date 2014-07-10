@@ -118,7 +118,7 @@ app.get('/callback', function(req, res) {
 				            //console.log('a change event occured:',arguments);
 				            if ( changeType == 'create'){
 								// var photo = fs.readFileSync(filePath);
-					            client.photo("aigamix", {data:filePath}, function(c){
+					            client.photo(auth.blog_name, {data:filePath}, function(c){
 					            	console.log(c);
 					            });
 					        }
