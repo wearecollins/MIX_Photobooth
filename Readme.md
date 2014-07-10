@@ -20,12 +20,18 @@ Setting up
 			* We made a supercut of Baywatch intros, beach music vids, and stock beach video
 * Tumblr Uploader
 	* This is a very hastily compiled hodgepodge of examples. Use at your own peril!
-		* install [node](http://nodejs.org/)
-		* cd this_repo/scripts
-		* npm install tumblr
-		* npm install express
-		* npm install body-parser
-		* npm install cookie-parser
-		* npm install oauth
-		* npm install watchr
-		* I hope that's it... sorry, a lot going on here.
+		* Requirements
+			* install [node](http://nodejs.org/)
+			* cd this_repo/scripts
+			* npm install tumblr
+			* npm install express
+			* npm install body-parser
+			* npm install cookie-parser
+			* npm install oauth
+			* npm install watchr
+			* I hope that's it... sorry, a lot going on here.
+		* Tumblr setup
+			* Sign up for an [API key](http://tumblr.com/api)
+			* Copy scripts/auth_template.js, rename to auth.js
+			* Swap out consumer_key, consumer_secret, and blog_name for yours
+			* That's it!
